@@ -13,6 +13,8 @@ from PyQt5 import QtGui
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from pathlib import Path
+from io import StringIO
+
 
 def serial_ports():
     """ Lists serial port names
@@ -101,7 +103,9 @@ class text_widget(QWidget):
 #
 #
 
-
+########################## ADDED CODE ################################
+New_inputs_text = QLineEdit
+##################### END OF ADDED CODE ##############################
 
 #
 #
@@ -175,8 +179,21 @@ class Widget(QWidget):
         # I defined a new splitter to seperate between the upper and lower sides of the window
         V_splitter = QSplitter(Qt.Vertical)
         V_splitter.addWidget(H_splitter)
+        
+        
+        ######################### ADDED CODE #################################
+        
+        New_inputs_label = QLabel(self)
+        New_inputs_label.setText("Enter inputs here separated by a comma")
+        V_splitter.addWidget(New_inputs_label)
+        
+        global New_inputs_text
+        New_inputs_text = QLineEdit(self)
+        V_splitter.addWidget(New_inputs_text)
+        
+        ####################### END OF ADDED CODE ############################
+        
         V_splitter.addWidget(text2)
-
         Final_Layout = QHBoxLayout(self)
         Final_Layout.addWidget(V_splitter)
 
@@ -282,6 +299,9 @@ class UI(QMainWindow):
         RunAction = QAction("Run", self)
         RunAction.triggered.connect(self.Run)
         Run.addAction(RunAction)
+        
+        MyRunAction = QAction("Run", self)
+        MyRunAction.triggered.connect(self.Run)
 
         # Making and adding File Features
         Save_Action = QAction("Save", self)
@@ -313,17 +333,35 @@ class UI(QMainWindow):
 
     ###########################        Start OF the Functions          ##################
     def Run(self):
-        if self.port_flag == 0:
-            mytext = text.toPlainText()
-        #
-        ##### Compiler Part
-        #
-#            ide.create_file(mytext)
-#            ide.upload_file(self.portNo)
-            text2.append("Sorry, there is no attached compiler.")
+        
+        ######################### ADDED CODE ##################################
+        
+        text2.clear()
+        txt = text.toPlainText()
+        args = New_inputs_text.text().split(',')
+        function_begin = txt.find("def") + 4
+        
+        function_name_End = txt.find("(")
+        get_fn = txt[function_begin: function_name_End + 1]
+        for arg in args:
+            get_fn += arg + ','
+        get_fn = get_fn[:-1] + ')'
+       
+       
+        original_stdout = sys.stdout
+        result = StringIO()
+        sys.stdout = result
+        if txt.find('def') == -1:
+            exec(txt)
 
         else:
-            text2.append("Please Select Your Port Number First")
+            exec(txt + "\n" + get_fn, globals())
+            
+
+        text2.append(result.getvalue())
+        sys.stdout = original_stdout
+
+        ###################### END OF ADDED CODE #################################
 
 
     # this function is made to get which port was selected by the user
